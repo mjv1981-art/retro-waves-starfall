@@ -1,0 +1,147 @@
+:root {
+      --fg: #fff;
+      --dim: rgba(255,255,255,.65);
+      --red: #ff2a2a;
+      --redDim: rgba(255,42,42,.75);
+
+      /* ZX-ish palette for border stripes */
+      --zx0: #000000;
+      --zx1: #0000d7; /* blue */
+      --zx2: #d70000; /* red */
+      --zx3: #d7d700; /* yellow */
+      --zx4: #00d700; /* green */
+      --zx5: #00d7d7; /* cyan */
+      --zx6: #d700d7; /* magenta */
+      --zx7: #d7d7d7; /* white-ish */
+    }
+
+    /* ===== Retro splash with ZX border stripes ===== */
+    #splash-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 2000;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+
+      /* big Spectrum-like border area */
+      padding: clamp(42px, 10vmin, 140px);
+
+      /* striped border (tape-loader vibe) */
+      background:
+        repeating-linear-gradient(
+          0deg,
+          var(--zx2) 0px, var(--zx2) 6px,
+          var(--zx3) 6px, var(--zx3) 12px,
+          var(--zx4) 12px, var(--zx4) 18px,
+          var(--zx5) 18px, var(--zx5) 24px,
+          var(--zx1) 24px, var(--zx1) 30px,
+          var(--zx6) 30px, var(--zx6) 36px,
+          var(--zx7) 36px, var(--zx7) 42px,
+          var(--zx0) 42px, var(--zx0) 50px
+        );
+      background-size: 100% 120px;
+      animation: zxBorder 0.22s linear infinite;
+      box-sizing: border-box;
+    }
+
+    @keyframes zxBorder {
+      0% { background-position: 0 0; }
+      100% { background-position: 0 120px; }
+    }
+
+    /* inner "screen" */
+    .splash-inner {
+      width: min(860px, 100%);
+      aspect-ratio: 4 / 3;
+      background: #000;
+      border: 1px solid rgba(255,255,255,.25);
+      box-shadow: 0 0 60px rgba(0,0,0,.55);
+
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 18px;
+
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+
+    #splash-screen .brand {
+      font-size: clamp(26px, 5vw, 56px);
+      font-weight: 900;
+      color: #ff0;
+      text-shadow: 2px 2px 0 #f0f, 4px 4px 0 #0ff;
+      letter-spacing: 6px;
+      animation: flicker 2s infinite;
+      user-select: none;
+    }
+
+    @keyframes flicker {
+      0% { opacity: 1; }
+      50% { opacity: 0.82; }
+      100% { opacity: 1; }
+    }
+
+    .loader-text {
+      font-size: clamp(16px, 3.6vw, 34px);
+      color: #0f0;
+      border-right: 2px solid #0f0;
+      white-space: nowrap;
+      overflow: hidden;
+      padding-right: 6px;
+      animation: blink-cursor 1s step-end infinite;
+      user-select: none;
+    }
+
+    @keyframes blink-cursor {
+      from, to { border-color: transparent; }
+      50% { border-color: #0f0; }
+    }
+
+    .tape-bars {
+      width: min(720px, 86%);
+      height: 32px;
+      background: repeating-linear-gradient(
+        90deg,
+        #0f0 0px,
+        #0f0 10px,
+        #000 10px,
+        #000 20px
+      );
+      background-size: 200% 100%;
+      animation: move-bars 0.5s linear infinite;
+      opacity: 0.75;
+      border: 1px solid rgba(0,255,0,.35);
+      box-shadow: 0 0 18px rgba(0,255,0,.15);
+    }
+
+    @keyframes move-bars {
+      0% { background-position: 0% 0%; }
+      100% { background-position: 200% 0%; }
+    }
+
+    .click-hint {
+      margin-top: 10px;
+      font-size: clamp(12px, 2.6vw, 22px);
+      color: rgba(255,255,255,.35);
+      animation: pulse 1.5s infinite;
+      user-select: none;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 0.25; }
+      50% { opacity: 1; }
+      100% { opacity: 0.25; }
+    }
+
+    /* Respect reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+      #splash-screen { animation: none; }
+      .tape-bars { animation: none; }
+      #splash-screen .brand { animation: none; }
+      .loader-text { animation: none; }
+      .click-hint { animation: none; }
+    }
+  
+#splash-screen .brand { display: block; }
