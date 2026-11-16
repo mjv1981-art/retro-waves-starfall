@@ -53,138 +53,26 @@ footer {margin-top:24px;font-size:13px}
   </article>
   <article>
     <span class="location">Gameplay · Mars and Venus</span>
-    <h2>Redline</h2>
-    <p class="credit">Original Starfall synth track · 30 seconds</p>
-    <button type="button" data-loop="redline">Play Redline</button>
-    <audio hidden controls preload="none" aria-label="Redline"></audio>
+    <h2>Newer Wave</h2>
+    <p class="credit">Kevin MacLeod</p>
+    <audio controls preload="none" aria-label="Newer Wave" src="newer-wave.mp3"></audio>
     <p class="error" role="status"></p>
   </article>
   <article>
     <span class="location">Gameplay · Saturn</span>
-    <h2>Ring Runner</h2>
-    <p class="credit">Original Starfall synth track · 34 seconds</p>
-    <button type="button" data-loop="rings">Play Ring Runner</button>
-    <audio hidden controls preload="none" aria-label="Ring Runner"></audio>
+    <h2>Brain Dance</h2>
+    <p class="credit">Kevin MacLeod</p>
+    <audio controls preload="none" aria-label="Brain Dance" src="brain-dance.mp3"></audio>
     <p class="error" role="status"></p>
   </article>
 </section>
 <footer>
-  “Lightless Dawn” and “Voxel Revolution” by <a href="https://incompetech.com/">Kevin MacLeod</a>,
+  “Lightless Dawn,” “Voxel Revolution,” “Newer Wave,” and “Brain Dance” by <a href="https://incompetech.com/">Kevin MacLeod</a>,
   <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>.
 </footer>
 </main>
 <script>
 'use strict';
-// Use the same synth renderer as music.js. Here createBuffer exposes the
-// same float channels so the result can be played in a native audio control.
-const context={
-  createBuffer(channels,length,sampleRate){
-    const samples=Array.from({length:channels},()=>new Float32Array(length));
-    return {length,sampleRate,numberOfChannels:channels,getChannelData:index=>samples[index]};
-  }
-};
-  function renderLoop(name){
-    const mars=name==='redline';
-    const sampleRate=22050, beat=60/(mars?128:114);
-    const length=Math.round(64*beat*sampleRate);
-    const buffer=context.createBuffer(2,length,sampleRate);
-    const left=buffer.getChannelData(0),right=buffer.getChannelData(1);
-    const tau=2*Math.PI;
-    let seed=mars?3191:7613;
-    const noise=()=>{
-      seed=(Math.imul(seed,1664525)+1013904223)>>>0;
-      return seed/4294967296*2-1;
-    };
-    const add=(start,duration,amp,pan,tone,attack=.012)=>{
-      const first=Math.round(start*beat*sampleRate);
-      const span=Math.round(duration*beat*sampleRate);
-      const lg=Math.sqrt((1-pan)*.5)*amp,rg=Math.sqrt((1+pan)*.5)*amp;
-      for(let i=0;i<span;i++){
-        const time=i/sampleRate;
-        const envelope=Math.min(1,time/attack,(span-i)/(sampleRate*.045));
-        const sample=tone(time)*envelope;
-        const out=(first+i)%length;
-        left[out]+=sample*lg;
-        right[out]+=sample*rg;
-      }
-    };
-    const note=(start,duration,midi,amp,pan,voice)=>{
-      const freq=440*2**((midi-69)/12);
-      const phase=tau*freq;
-      add(start,duration,amp,pan,t=>voice(phase*t,t));
-    };
-    const bass=(p,t)=>Math.sin(p)*.75+Math.sin(2*p)*.2+Math.sin(3*p)*.08;
-    const arp=(p,t)=>(Math.sin(p)*.72+Math.sin(2*p)*.22+Math.sin(3*p)*.12)*Math.exp(-5*t);
-    const lead=(p,t)=>Math.sin(p+Math.sin(t*35)*.2)*.69+Math.sin(3*p)*.18;
-    const pad=(p,t)=>(Math.sin(p*.997)+Math.sin(p*1.003))*.36+Math.sin(2*p)*.17;
-    const progression=mars?
-      [[45,57,60,64,67],[41,53,57,60,64],[48,55,60,64,67],[43,55,59,62,65]]:
-      [[42,54,57,61,64],[38,54,57,62,66],[45,52,57,61,64],[40,52,56,59,64]];
-    const melody=mars?[[2,3,4,2],[1,2,3,1],[2,4,3,2],[3,2,1,2]]:
-      [[4,3,2,3],[2,3,4,1],[3,2,4,2],[4,2,1,3]];
-    for(let bar=0;bar<16;bar++){
-      const start=bar*4, chord=progression[bar%4];
-      for(const step of mars?[0,1.5,2,3.25]:[0,2,2.75]){
-        note(start+step,.65,chord[0]+(step===2?12:0),.19,0,bass);
-      }
-      for(let i=0;i<8;i++){
-        const degree=1+([0,2,1,3,2,0,3,1][i]+Math.floor(bar/8))%4;
-        note(start+i*.5,.43,chord[degree]+12,.085,(i%2?.38:-.38),arp);
-        add(start+i*.5,.16,i%2?.035:.017,.22,t=>noise()*Math.exp(-55*t),.004);
-      }
-      for(const step of mars?[0,2,3.5]:[0,2]){
-        add(start+step,.44,.26,0,t=>Math.sin(tau*(44*t+3.7*(1-Math.exp(-27*t))))*Math.exp(-15*t),.007);
-      }
-      for(const step of [1,3]){
-        add(start+step,.32,.095,-.12,t=>(noise()*.62+Math.sin(tau*165*t)*.32)*Math.exp(-20*t),.004);
-      }
-      if(!mars||bar%8>=4){
-        for(const degree of [1,2,3])note(start,3.9,chord[degree],.042,(degree-2)*.48,pad);
-      }
-      if(bar%8>=4||bar%4===2){
-        melody[bar%4].forEach((degree,i)=>{
-          if(i===2&&bar%2===0)return;
-          note(start+i+(mars?.25:.5),i===3?.45:.72,chord[degree]+12,.10,-.12,lead);
-        });
-      }
-    }
-    return buffer;
-  }
-
-function waveFile(buffer){
-  const channels=buffer.numberOfChannels, bytesPerSample=2;
-  const frameSize=channels*bytesPerSample;
-  const dataSize=frameSize*buffer.length;
-  const file=new ArrayBuffer(44+dataSize);
-  const view=new DataView(file);
-  const writeText=(offset,value)=>{
-    for(let i=0;i<value.length;i++)view.setUint8(offset+i,value.charCodeAt(i));
-  };
-  writeText(0,'RIFF');
-  view.setUint32(4,36+dataSize,true);
-  writeText(8,'WAVE');
-  writeText(12,'fmt ');
-  view.setUint32(16,16,true);
-  view.setUint16(20,1,true);
-  view.setUint16(22,channels,true);
-  view.setUint32(24,buffer.sampleRate,true);
-  view.setUint32(28,buffer.sampleRate*frameSize,true);
-  view.setUint16(32,frameSize,true);
-  view.setUint16(34,16,true);
-  writeText(36,'data');
-  view.setUint32(40,dataSize,true);
-  const samples=Array.from({length:channels},(_,i)=>buffer.getChannelData(i));
-  let offset=44;
-  for(let frame=0;frame<buffer.length;frame++){
-    for(const channel of samples){
-      const value=Math.max(-1,Math.min(1,channel[frame]));
-      view.setInt16(offset,Math.round(value*(value<0?32768:32767)),true);
-      offset+=bytesPerSample;
-    }
-  }
-  return new Blob([file],{type:'audio/wav'});
-}
-
 const players=[...document.querySelectorAll('audio')];
 for(const player of players){
   const message=player.closest('article').querySelector('.error');
@@ -193,20 +81,6 @@ for(const player of players){
     message.textContent='';
   });
   player.addEventListener('error',()=>{message.textContent='Audio could not load. Refresh this page to try again.';});
-}
-for(const button of document.querySelectorAll('[data-loop]')){
-  button.addEventListener('click',()=>{
-    const card=button.closest('article'),player=card.querySelector('audio'),message=card.querySelector('.error');
-    try {
-      player.src=URL.createObjectURL(waveFile(renderLoop(button.dataset.loop)));
-      player.hidden=false;
-      button.hidden=true;
-      player.play().catch(()=>{message.textContent='Press play in the audio player to start.';});
-      player.focus();
-    } catch {
-      message.textContent='Could not prepare the audio. Tap the button to try again.';
-    }
-  });
 }
 </script>
 </body>
