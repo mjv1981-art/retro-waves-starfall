@@ -1,0 +1,41 @@
+name: Import selected Starfall soundtracks
+on:
+  push:
+    branches: [import-starfall-soundtracks]
+permissions:
+  contents: write
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - name: Validate and store the two Incompetech MP3s
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import base64
+          import json
+          import os
+          from urllib.request import Request, urlopen
+
+          source = "https://incompetech.com/music/royalty-free/mp3-royaltyfree/"
+          endpoint = os.environ["GITHUB_API_URL"] + "/repos/" + os.environ["GITHUB_REPOSITORY"] + "/git/blobs"
+          for filename, remote in [("newer-wave.mp3", "Newer%20Wave.mp3"), ("brain-dance.mp3", "Brain%20Dance.mp3")]:
+              with urlopen(source + remote, timeout=25) as response:
+                  audio = response.read(20_000_001)
+              if not 100_000 < len(audio) <= 20_000_000:
+                  raise ValueError(f"Unexpected length for {filename}: {len(audio)}")
+              if audio[:3] != b"ID3" and (audio[0] != 0xFF or audio[1] & 0xE0 != 0xE0):
+                  raise ValueError(f"Invalid MPEG audio header for {filename}")
+              payload = json.dumps({"content": base64.b64encode(audio).decode("ascii"), "encoding": "base64"}).encode()
+              request = Request(endpoint, data=payload, headers={
+                  "Authorization": "Bearer " + os.environ["GH_TOKEN"],
+                  "Accept": "application/vnd.github+json",
+                  "Content-Type": "application/json",
+              })
+              with urlopen(request, timeout=30) as response:
+                  sha = json.load(response)["sha"]
+              print(f"{filename} {sha} {len(audio)} bytes", flush=True)
+          PY
